@@ -1,0 +1,192 @@
+name: Build and Test Charts
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      commit_id:
+        description: 'Full commit ID for installation and testing (default: latest commit). e.g daae94a0f72a13f7092812fa42d684b2af827xxx. WARNING: release job will NOT run by this trigger'
+        type: string
+      wait_seconds:
+        description: 'Wait seconds before cleanup (max 3600)'
+        type: number
+        default: 600
+
+env:
+  COMMIT_FULL_ID: ${{ inputs.commit_id || github.sha }}
+  WAIT_SECONDS: ${{ inputs.wait_seconds || 600 }} 
+
+jobs:  
+  preparation:
+    if: ${{ !startsWith(github.event.head_commit.message, 'no-ci') }}
+    runs-on: ubuntu-dind
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.COMMIT_FULL_ID }}
+
+    - name: Checkout SVTECH_CI_utilities 
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: SVTECH_CI_utilities
+        ref: dev-jenkins
+
+    - name: Checkout SVTECH-installation-automation
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/SVTECH-installation-automation'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: SVTECH-installation-automation
+        ref: master
+
+    - name: Checkout charts 
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/charts'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: charts
+        ref: main
+
+    - name: Checkout stacked_charts 
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/stacked_charts'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: stacked_charts
+        ref: master
+
+    - name: Init build_vars.yml file
+      run: |
+        # touch ${{ github.workspace }}/build_vars.yml
+        
+        cat << EOF > ${{ github.workspace }}/build_vars.yml
+        build_id: "."
+        build_vars_path: "${{ github.workspace }}"
+        # commit: "$GIT_COMMIT"
+        # comment: "$commit_comment"
+        build_var_path: ${{ github.workspace }}/build_vars.yml
+        # repo_path: $REPO_PATH
+        # git_branch: $GIT_BRANCH
+        # git_url: $GIT_URL
+        ROLE: "automation"
+        # MODE: $MODE
+        # NEW_ENV: $NEW_ENV
+        # NEW_TOPO: $NEW_TOPO
+        # CLEANUP_ENV: $CLEANUP_ENV
+        # CLEANUP_TOPO: $CLEANUP_TOPO
+        # INSTALLATION_REPO_TAG: $INSTALLATION_REPO_TAG
+        # AUTOMATION_REPO_TAG: $branch
+        # CONTAINER_REPO_TAG: $CONTAINER_REPO_TAG
+        PUBLIC_HELMCHARTS_REPO_TAG: main
+        EOF
+
+    - name: Init global_vars.yml file
+      run: |
+        mkdir -p ${{ github.workspace }}/auto_testing_global_vars
+        cat << EOF > ${{ github.workspace }}/auto_testing_global_vars/global_vars.yml
+        hosts_list:
+        - stable_MC1
+        # - stable_MC2
+        - stable_AGG11
+        - stable_AGG12
+        - stable_AGG13
+        - stable_AGG21
+        - stable_AGG22
+        - stable_CSG11
+        - stable_CSG12
+        - stable_CSG13
+          #- stable_CSG21
+          #- stable_CSG22
+          #- stable_CSG23
+          #- stable_CSG31
+          #- stable_CSG32
+          #- stable_CSG33
+        labip: 10.98.0.12
+        monitor_ip: 100.1.20.0/27
+        out_lab_address: 10.98.100.30
+        user: stable
+        vip_ip: 10.98.0.120
+        EOF
+
+    # - name: Create VMs on vcenter
+    #   run: |
+    #     ansible-playbook ${{ github.workspace }}/SVTECH_CI_utilities/auto_testing/vm--create_k8s_vm.yml -e "BUILD_ID=. BUILD_VARS_PATH=${{ github.workspace }}"
+
+    # - name: Deploy installation
+    #   run: |
+    #     export ANSIBLE_HOST_KEY_CHECKING=False
+    #     ansible-playbook ${{ github.workspace }}/SVTECH_CI_utilities/auto_testing/create_inventory_file.yml \
+    #         -e "BUILD_ID=. BUILD_VARS_PATH=${{ github.workspace }} \
+    #         template_file=${{ github.workspace }}/SVTECH_CI_utilities/auto_testing/templates/inventory_k8s_nmaa.j2 \
+    #         ROLE=automation \
+    #         IMAGE_TEST=None \
+    #         TAG_TEST=None \
+    #         AUTOMATION_REPO_TAG=HEAD \
+    #         CONTAINER_REPO_TAG=HEAD \
+    #         STACK=nmaa"
+    # - name: Deploy NMAA Stack
+    #   run: |
+    #     # Create network topology
+    #     ansible-playbook ${{ github.workspace }}/SVTECH_CI_utilities/auto_testing/get_global_vars.yml -e "BUILD_ID=. BUILD_VARS_PATH=${{ github.workspace }}"
+    #     # Install NMAA
+    #     export ANSIBLE_HOST_KEY_CHECKING=False
+    #     ansible-playbook ${{ github.workspace }}/SVTECH-installation-automation/k8s_nms_for_ci.yml \
+    #                 -e @${{ github.workspace }}/stacked_charts/kubernetes/nmaa/image_chart_mapping.yml \
+    #                 -e "GH_TOKEN=${{ secrets.PUSH_TOKEN }}" \
+    #                 -e "GH_FG_TOKEN=${{ secrets.PUSH_TOKEN }}" \
+    #                 -e "GH_USERNAME=svtechnmaa" \
+    #                 -e "REPO_PATH=${{ github.workspace }}" \
+    #                 -i ${{ github.workspace }}/nmaa_inventory
+
+    # - name: Upload artifact
+    #   if: always() && !cancelled()
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: build_vars
+    #     path: ${{ github.workspace }}/build_vars.yml
+
+#   cleanup:
+#     runs-on: ansible-dind
+#     needs: nmaa_vm_installation
+#     if: always() && !cancelled()
+#     steps:
+#       - name: Wait before cleanup
+#         continue-on-error: true
+#         run: |
+#           if [ ${{ env.WAIT_SECONDS }} -gt 3600 ]; then
+#             echo "Wait seconds is too long, set to 3600"
+#             echo "WAIT_SECONDS=3600" >> $GITHUB_ENV
+#           fi
+#           echo "Wait seconds: ${{ env.WAIT_SECONDS }}"
+#           echo "Waiting before cleanup..."
+#           sleep ${{ env.WAIT_SECONDS }}
+
+#       - name: Checkout SVTECH_CI_utilities 
+#         uses: actions/checkout@v4
+#         with:
+#           repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
+#           token: ${{ secrets.PUSH_TOKEN }}
+#           path: SVTECH_CI_utilities
+#           ref: dev-jenkins
+
+#       - name: Download build_vars artifact
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: build_vars
+#           path: ${{ github.workspace }}
+
+#       - name: Cleanup Environment
+#         run: |
+#          ansible-playbook ${{ github.workspace }}/SVTECH_CI_utilities/auto_testing/vm--cleanup_vms.yml -e "BUILD_ID=. BUILD_VARS_PATH=${{ github.workspace }}"
+    
