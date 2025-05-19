@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+      - feature/*
+      - fix/*
   pull_request:
     branches:
       - main
@@ -49,6 +51,8 @@ jobs:
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
       id: get_changed_charts
       run: |
+        git branch
+
         if [[ "${{ github.ref_name }}" =~ .*"main".* ]]; then
             get_changed_charts=`git show -m --pretty="" --name-only ${{ env.COMMIT_FULL_ID }} | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
         else
