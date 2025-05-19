@@ -28,14 +28,15 @@ jobs:
       contents: read
       packages: write
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.COMMIT_FULL_ID }}
+
     - name: Check commit message
       run: |
         test=$(git log --pretty=format:"%H %s %b" | grep "${{ env.COMMIT_FULL_ID }}" | sed 's,'${{ env.COMMIT_FULL_ID }}' ,,g')
         echo $test
-    # - name: Checkout code
-    #   uses: actions/checkout@v4
-    #   with:
-    #     ref: ${{ env.COMMIT_FULL_ID }}
 
     # - name: Checkout SVTECH_CI_utilities 
     #   uses: actions/checkout@v4
