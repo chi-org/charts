@@ -46,31 +46,28 @@ jobs:
         fi
 
     - name: Get changed charts
-      run: |
-        ls 
-        git branch
-        git status
-        git show -m --pretty="" --name-only ${{ env.COMMIT_FULL_ID }}
-
-        # if [[ "${{ github.ref_name }}" =~ .*"main".* ]]; then
-        #     get_changed_charts=`git show -m --pretty="" --name-only ${{ env.COMMIT_FULL_ID }} | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
-        # else
-        #     get_changed_charts=`git diff ${{ github.ref_name }} origin/main --name-only | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
-        # fi
-
-        # echo "Get changed charts: $get_changed_charts"
-
-        # changed_charts=$(echo $get_changed_charts | tr " " ",")
-
-        # echo "Changed charts: $changed_charts"
-    - name: Checkout SVTECH_CI_utilities 
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
-      uses: actions/checkout@v4
-      with:
-        repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
-        token: ${{ secrets.PUSH_TOKEN }}
-        path: SVTECH_CI_utilities
-        ref: dev-jenkins
+      id: get_changed_charts
+      run: |
+        if [[ "${{ github.ref_name }}" =~ .*"main".* ]]; then
+            get_changed_charts=`git show -m --pretty="" --name-only ${{ env.COMMIT_FULL_ID }} | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
+        else
+            get_changed_charts=`git diff ${{ github.ref_name }} origin/main --name-only | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
+        fi
+
+        echo "Get changed charts: $get_changed_charts"
+        changed_charts=$(echo $get_changed_charts | tr " " ",")
+        echo "Changed charts: $changed_charts"
+        echo "changed_charts=$changed_charts" >> $GITHUB_OUTPUT
+
+    # - name: Checkout SVTECH_CI_utilities 
+    #   if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
+    #   uses: actions/checkout@v4
+    #   with:
+    #     repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
+    #     token: ${{ secrets.PUSH_TOKEN }}
+    #     path: SVTECH_CI_utilities
+    #     ref: dev-jenkins
 
     # - name: Checkout SVTECH-installation-automation
     #   uses: actions/checkout@v4
@@ -81,6 +78,7 @@ jobs:
     #     ref: master
 
     - name: Checkout stacked_charts 
+      if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
       uses: actions/checkout@v4
       with:
         repository: '${{ github.repository_owner }}/stacked_charts'
@@ -88,30 +86,32 @@ jobs:
         path: stacked_charts
         ref: master
 
-    # - name: Init build_vars.yml file
-    #   run: |
-    #     # touch ${{ github.workspace }}/build_vars.yml
+    - name: Init build_vars.yml file
+      if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
+      run: |
+        # touch ${{ github.workspace }}/build_vars.yml
         
-    #     cat << EOF > ${{ github.workspace }}/build_vars.yml
-    #     build_id: "."
-    #     build_vars_path: "${{ github.workspace }}"
-    #     # commit: "$GIT_COMMIT"
-    #     # comment: "$commit_comment"
-    #     build_var_path: ${{ github.workspace }}/build_vars.yml
-    #     # repo_path: $REPO_PATH
-    #     # git_branch: $GIT_BRANCH
-    #     # git_url: $GIT_URL
-    #     ROLE: "automation"
-    #     # MODE: $MODE
-    #     # NEW_ENV: $NEW_ENV
-    #     # NEW_TOPO: $NEW_TOPO
-    #     # CLEANUP_ENV: $CLEANUP_ENV
-    #     # CLEANUP_TOPO: $CLEANUP_TOPO
-    #     # INSTALLATION_REPO_TAG: $INSTALLATION_REPO_TAG
-    #     # AUTOMATION_REPO_TAG: $branch
-    #     # CONTAINER_REPO_TAG: $CONTAINER_REPO_TAG
-    #     PUBLIC_HELMCHARTS_REPO_TAG: main
-    #     EOF
+        cat << EOF > ${{ github.workspace }}/build_vars.yml
+        build_id: "."
+        build_vars_path: "${{ github.workspace }}"
+        # commit: "$GIT_COMMIT"
+        # comment: "$commit_comment"
+        build_var_path: ${{ github.workspace }}/build_vars.yml
+        # repo_path: $REPO_PATH
+        # git_branch: $GIT_BRANCH
+        # git_url: $GIT_URL
+        ROLE: "automation"
+        # MODE: $MODE
+        # NEW_ENV: $NEW_ENV
+        # NEW_TOPO: $NEW_TOPO
+        # CLEANUP_ENV: $CLEANUP_ENV
+        # CLEANUP_TOPO: $CLEANUP_TOPO
+        # INSTALLATION_REPO_TAG: $INSTALLATION_REPO_TAG
+        # AUTOMATION_REPO_TAG: $branch
+        # CONTAINER_REPO_TAG: $CONTAINER_REPO_TAG
+        PUBLIC_HELMCHARTS_REPO_TAG: main
+        charts: ${{ steps.get_changed_charts.outputs.changed_charts }}
+        EOF
 
     # - name: Init global_vars.yml file
     #   run: |
