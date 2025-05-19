@@ -23,48 +23,51 @@ env:
 
 jobs:  
   preparation:
-    if: ${{ !startsWith(github.event.head_commit.message, 'no-ci') }}
     runs-on: ubuntu-dind
     permissions:
       contents: read
       packages: write
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ env.COMMIT_FULL_ID }}
+    - name: Check commit message
+      run: |
+        test=$(git log --pretty=format:"%H %s %b" | grep "${{ env.COMMIT_FULL_ID }}" | sed 's,'${{ env.COMMIT_FULL_ID }}' ,,g')
+        echo $test
+    # - name: Checkout code
+    #   uses: actions/checkout@v4
+    #   with:
+    #     ref: ${{ env.COMMIT_FULL_ID }}
 
-    - name: Checkout SVTECH_CI_utilities 
-      uses: actions/checkout@v4
-      with:
-        repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
-        token: ${{ secrets.PUSH_TOKEN }}
-        path: SVTECH_CI_utilities
-        ref: dev-jenkins
+    # - name: Checkout SVTECH_CI_utilities 
+    #   uses: actions/checkout@v4
+    #   with:
+    #     repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
+    #     token: ${{ secrets.PUSH_TOKEN }}
+    #     path: SVTECH_CI_utilities
+    #     ref: dev-jenkins
 
-    - name: Checkout SVTECH-installation-automation
-      uses: actions/checkout@v4
-      with:
-        repository: '${{ github.repository_owner }}/SVTECH-installation-automation'
-        token: ${{ secrets.PUSH_TOKEN }}
-        path: SVTECH-installation-automation
-        ref: master
+    # - name: Checkout SVTECH-installation-automation
+    #   uses: actions/checkout@v4
+    #   with:
+    #     repository: '${{ github.repository_owner }}/SVTECH-installation-automation'
+    #     token: ${{ secrets.PUSH_TOKEN }}
+    #     path: SVTECH-installation-automation
+    #     ref: master
 
-    - name: Checkout charts 
-      uses: actions/checkout@v4
-      with:
-        repository: '${{ github.repository_owner }}/charts'
-        token: ${{ secrets.PUSH_TOKEN }}
-        path: charts
-        ref: main
+    # - name: Checkout charts 
+    #   uses: actions/checkout@v4
+    #   with:
+    #     repository: '${{ github.repository_owner }}/charts'
+    #     token: ${{ secrets.PUSH_TOKEN }}
+    #     path: charts
+    #     ref: main
 
-    - name: Checkout stacked_charts 
-      uses: actions/checkout@v4
-      with:
-        repository: '${{ github.repository_owner }}/stacked_charts'
-        token: ${{ secrets.PUSH_TOKEN }}
-        path: stacked_charts
-        ref: master
+    # - name: Checkout stacked_charts 
+    #   uses: actions/checkout@v4
+    #   with:
+    #     repository: '${{ github.repository_owner }}/stacked_charts'
+    #     token: ${{ secrets.PUSH_TOKEN }}
+    #     path: stacked_charts
+    #     ref: master
 
     # - name: Init build_vars.yml file
     #   run: |
