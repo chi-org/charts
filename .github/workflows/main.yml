@@ -46,6 +46,8 @@ jobs:
 
     - name: Get changed charts
       run: |
+        git show -m --pretty="" --name-only ${{ env.COMMIT_FULL_ID }}
+        
         if [[ "${{ github.ref_name }}" =~ .*"main".* ]]; then
             get_changed_charts=`git show -m --pretty="" --name-only ${{ env.COMMIT_FULL_ID }} | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
         else
