@@ -175,7 +175,7 @@ jobs:
     steps:
     - name: test
       run: |
-        echo "test"
+        echo "this is for testing"
 #       - name: Wait before cleanup
 #         continue-on-error: true
 #         run: |
