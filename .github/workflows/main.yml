@@ -52,6 +52,8 @@ jobs:
             get_changed_charts=`git diff ${{ github.ref_name }} origin/main --name-only | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
         fi
 
+        echo "Get changed charts: $get_changed_charts"
+
         changed_charts=$(echo $get_changed_charts | tr " " ",")
 
         echo "Changed charts: $changed_charts"
