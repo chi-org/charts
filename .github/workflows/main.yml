@@ -66,30 +66,30 @@ jobs:
         path: stacked_charts
         ref: master
 
-    - name: Init build_vars.yml file
-      run: |
-        # touch ${{ github.workspace }}/build_vars.yml
+    # - name: Init build_vars.yml file
+    #   run: |
+    #     # touch ${{ github.workspace }}/build_vars.yml
         
-        cat << EOF > ${{ github.workspace }}/build_vars.yml
-        build_id: "."
-        build_vars_path: "${{ github.workspace }}"
-        # commit: "$GIT_COMMIT"
-        # comment: "$commit_comment"
-        build_var_path: ${{ github.workspace }}/build_vars.yml
-        # repo_path: $REPO_PATH
-        # git_branch: $GIT_BRANCH
-        # git_url: $GIT_URL
-        ROLE: "automation"
-        # MODE: $MODE
-        # NEW_ENV: $NEW_ENV
-        # NEW_TOPO: $NEW_TOPO
-        # CLEANUP_ENV: $CLEANUP_ENV
-        # CLEANUP_TOPO: $CLEANUP_TOPO
-        # INSTALLATION_REPO_TAG: $INSTALLATION_REPO_TAG
-        # AUTOMATION_REPO_TAG: $branch
-        # CONTAINER_REPO_TAG: $CONTAINER_REPO_TAG
-        PUBLIC_HELMCHARTS_REPO_TAG: main
-        EOF
+    #     cat << EOF > ${{ github.workspace }}/build_vars.yml
+    #     build_id: "."
+    #     build_vars_path: "${{ github.workspace }}"
+    #     # commit: "$GIT_COMMIT"
+    #     # comment: "$commit_comment"
+    #     build_var_path: ${{ github.workspace }}/build_vars.yml
+    #     # repo_path: $REPO_PATH
+    #     # git_branch: $GIT_BRANCH
+    #     # git_url: $GIT_URL
+    #     ROLE: "automation"
+    #     # MODE: $MODE
+    #     # NEW_ENV: $NEW_ENV
+    #     # NEW_TOPO: $NEW_TOPO
+    #     # CLEANUP_ENV: $CLEANUP_ENV
+    #     # CLEANUP_TOPO: $CLEANUP_TOPO
+    #     # INSTALLATION_REPO_TAG: $INSTALLATION_REPO_TAG
+    #     # AUTOMATION_REPO_TAG: $branch
+    #     # CONTAINER_REPO_TAG: $CONTAINER_REPO_TAG
+    #     PUBLIC_HELMCHARTS_REPO_TAG: main
+    #     EOF
 
     # - name: Init global_vars.yml file
     #   run: |
