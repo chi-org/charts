@@ -91,33 +91,33 @@ jobs:
         PUBLIC_HELMCHARTS_REPO_TAG: main
         EOF
 
-    - name: Init global_vars.yml file
-      run: |
-        mkdir -p ${{ github.workspace }}/auto_testing_global_vars
-        cat << EOF > ${{ github.workspace }}/auto_testing_global_vars/global_vars.yml
-        hosts_list:
-        - stable_MC1
-        # - stable_MC2
-        - stable_AGG11
-        - stable_AGG12
-        - stable_AGG13
-        - stable_AGG21
-        - stable_AGG22
-        - stable_CSG11
-        - stable_CSG12
-        - stable_CSG13
-          #- stable_CSG21
-          #- stable_CSG22
-          #- stable_CSG23
-          #- stable_CSG31
-          #- stable_CSG32
-          #- stable_CSG33
-        labip: 10.98.0.12
-        monitor_ip: 100.1.20.0/27
-        out_lab_address: 10.98.100.30
-        user: stable
-        vip_ip: 10.98.0.120
-        EOF
+    # - name: Init global_vars.yml file
+    #   run: |
+    #     mkdir -p ${{ github.workspace }}/auto_testing_global_vars
+    #     cat << EOF > ${{ github.workspace }}/auto_testing_global_vars/global_vars.yml
+    #     hosts_list:
+    #     - stable_MC1
+    #     # - stable_MC2
+    #     - stable_AGG11
+    #     - stable_AGG12
+    #     - stable_AGG13
+    #     - stable_AGG21
+    #     - stable_AGG22
+    #     - stable_CSG11
+    #     - stable_CSG12
+    #     - stable_CSG13
+    #       #- stable_CSG21
+    #       #- stable_CSG22
+    #       #- stable_CSG23
+    #       #- stable_CSG31
+    #       #- stable_CSG32
+    #       #- stable_CSG33
+    #     labip: 10.98.0.12
+    #     monitor_ip: 100.1.20.0/27
+    #     out_lab_address: 10.98.100.30
+    #     user: stable
+    #     vip_ip: 10.98.0.120
+    #     EOF
 
     # - name: Create VMs on vcenter
     #   run: |
