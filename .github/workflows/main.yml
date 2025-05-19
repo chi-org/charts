@@ -46,19 +46,22 @@ jobs:
 
     - name: Get changed charts
       run: |
+        ls 
+        git branch
+        git status
         git show -m --pretty="" --name-only ${{ env.COMMIT_FULL_ID }}
-        
-        if [[ "${{ github.ref_name }}" =~ .*"main".* ]]; then
-            get_changed_charts=`git show -m --pretty="" --name-only ${{ env.COMMIT_FULL_ID }} | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
-        else
-            get_changed_charts=`git diff ${{ github.ref_name }} origin/main --name-only | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
-        fi
 
-        echo "Get changed charts: $get_changed_charts"
+        # if [[ "${{ github.ref_name }}" =~ .*"main".* ]]; then
+        #     get_changed_charts=`git show -m --pretty="" --name-only ${{ env.COMMIT_FULL_ID }} | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
+        # else
+        #     get_changed_charts=`git diff ${{ github.ref_name }} origin/main --name-only | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
+        # fi
 
-        changed_charts=$(echo $get_changed_charts | tr " " ",")
+        # echo "Get changed charts: $get_changed_charts"
 
-        echo "Changed charts: $changed_charts"
+        # changed_charts=$(echo $get_changed_charts | tr " " ",")
+
+        # echo "Changed charts: $changed_charts"
     - name: Checkout SVTECH_CI_utilities 
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
       uses: actions/checkout@v4
@@ -76,21 +79,13 @@ jobs:
     #     path: SVTECH-installation-automation
     #     ref: master
 
-    # - name: Checkout charts 
-    #   uses: actions/checkout@v4
-    #   with:
-    #     repository: '${{ github.repository_owner }}/charts'
-    #     token: ${{ secrets.PUSH_TOKEN }}
-    #     path: charts
-    #     ref: main
-
-    # - name: Checkout stacked_charts 
-    #   uses: actions/checkout@v4
-    #   with:
-    #     repository: '${{ github.repository_owner }}/stacked_charts'
-    #     token: ${{ secrets.PUSH_TOKEN }}
-    #     path: stacked_charts
-    #     ref: master
+    - name: Checkout stacked_charts 
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/stacked_charts'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: stacked_charts
+        ref: master
 
     # - name: Init build_vars.yml file
     #   run: |
