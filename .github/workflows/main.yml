@@ -51,14 +51,8 @@ jobs:
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
       id: get_changed_charts
       run: |
-        git branch
-
-        if [[ "${{ github.ref_name }}" =~ .*"main".* ]]; then
-            get_changed_charts=`git show -m --pretty="" --name-only ${{ env.COMMIT_FULL_ID }} | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
-        else
-            get_changed_charts=`git diff ${{ github.ref_name }} origin/main --name-only | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
-        fi
-
+        git fetch origin main
+        get_changed_charts=`git diff ${{ github.ref_name }} origin/main --name-only | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
         echo "Get changed charts: $get_changed_charts"
         changed_charts=$(echo $get_changed_charts | tr " " ",")
         echo "Changed charts: $changed_charts"
