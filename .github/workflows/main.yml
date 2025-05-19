@@ -27,6 +27,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      no_ci: ${{ steps.check_no_ci.outputs.no_ci || 'false' }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -34,17 +36,22 @@ jobs:
         ref: ${{ env.COMMIT_FULL_ID }}
 
     - name: Check commit message
+      id: check_no_ci
       run: |
-        test=$(git log --pretty=format:"%H %s %b" | grep "${{ env.COMMIT_FULL_ID }}" | sed 's,'${{ env.COMMIT_FULL_ID }}' ,,g')
-        echo $test
+        commit_message=$(git log --pretty=format:"%H %s %b" | grep "${{ env.COMMIT_FULL_ID }}" | sed 's,'${{ env.COMMIT_FULL_ID }}' ,,g')
+        if [[ "$commit_message" =~ .*"no-ci".* ]]; then
+            echo "Found 'no-ci' on commit comment. Stop Workflow !!!"
+            echo "no_ci=true" >> $GITHUB_OUTPUT
+        fi
 
-    # - name: Checkout SVTECH_CI_utilities 
-    #   uses: actions/checkout@v4
-    #   with:
-    #     repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
-    #     token: ${{ secrets.PUSH_TOKEN }}
-    #     path: SVTECH_CI_utilities
-    #     ref: dev-jenkins
+    - name: Checkout SVTECH_CI_utilities 
+      if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: SVTECH_CI_utilities
+        ref: dev-jenkins
 
     # - name: Checkout SVTECH-installation-automation
     #   uses: actions/checkout@v4
@@ -160,11 +167,15 @@ jobs:
     #     name: build_vars
     #     path: ${{ github.workspace }}/build_vars.yml
 
-#   cleanup:
-#     runs-on: ansible-dind
-#     needs: nmaa_vm_installation
-#     if: always() && !cancelled()
-#     steps:
+  cleanup:
+    runs-on: ansible-dind
+    needs: preparation
+    if: needs.preparation.outputs.no_ci != 'true'
+    # if: always() && !cancelled()
+    steps:
+    - name: test
+      run: |
+        echo "test"
 #       - name: Wait before cleanup
 #         continue-on-error: true
 #         run: |
