@@ -40,10 +40,21 @@ jobs:
       run: |
         commit_message=$(git log --pretty=format:"%H %s %b" | grep "${{ env.COMMIT_FULL_ID }}" | sed 's,'${{ env.COMMIT_FULL_ID }}' ,,g')
         if [[ "$commit_message" =~ .*"no-ci".* ]]; then
-            echo "Found 'no-ci' on commit comment. Stop Workflow !!!"
+            echo "Found 'no-ci' in commit message. Stop workflow !!!"
             echo "no_ci=true" >> $GITHUB_OUTPUT
         fi
 
+    - name: Get changed charts
+      run: |
+        if [[ "${{ github.ref_name }}" =~ .*"main".* ]]; then
+            get_changed_charts=`git show -m --pretty="" --name-only ${{ env.COMMIT_FULL_ID }} | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
+        else
+            get_changed_charts=`git diff ${{ github.ref_name }} origin/main --name-only | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
+        fi
+
+        changed_charts=$(echo $get_changed_charts | tr " " ",")
+
+        echo "Changed charts: $changed_charts"
     - name: Checkout SVTECH_CI_utilities 
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
       uses: actions/checkout@v4
