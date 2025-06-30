@@ -4,7 +4,7 @@
 ##
 global:
   mariadb-galera:
-    replicaCount: 1
+    replicaCount: 3
   maxscale:
     enabled: true
 #   imageRegistry: myRegistryName
