@@ -30,14 +30,13 @@ env:
 
 
 jobs:  
-  get_changed_charts:
+  check_charts:
     runs-on: ubuntu-dind
     permissions:
       contents: read
       packages: write
     outputs:
       no_ci: ${{ steps.check_no_ci.outputs.no_ci || 'false' }}
-      changed_charts: ${{ steps.get_changed_charts.outputs.changed_charts || '' }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -66,8 +65,23 @@ jobs:
         get_changed_charts=`git diff ${{ env.COMMIT_FULL_ID }} "origin/$GITHUB_COMPARE_BRANCH" --name-only | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
         echo "Get changed charts: $get_changed_charts"
         changed_charts=$(echo $get_changed_charts | tr " " ",")
+        changed_charts="$(echo -e "$changed_charts" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
         echo "Changed charts: $changed_charts"
         echo "changed_charts=$changed_charts" >> $GITHUB_OUTPUT
+
+    - name: Checkout stacked_charts 
+      if: ${{ steps.check_no_ci.outputs.no_ci != 'true' && steps.get_changed_charts.outputs.changed_charts != '' }}
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/stacked_charts'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: stacked_charts
+        ref: ${{ env.STACKED_CHARTS_BRANCH }}
+    
+    - name: Check stacked charts
+      if: ${{ steps.check_no_ci.outputs.no_ci != 'true' && steps.get_changed_charts.outputs.changed_charts != '' }}
+      run: |
+        echo "Changed charts: ${{ env.changed_charts }}"
 
     - name: Init build_vars.yml file
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
@@ -103,31 +117,6 @@ jobs:
         name: build_vars
         path: ${{ github.workspace }}/build_vars.yml
 
-  check_stacked_charts:
-    runs-on: ubuntu-dind
-    needs: get_changed_charts
-    if: needs.get_changed_charts.outputs.no_ci != 'true'
-    env:
-      changed_charts: ${{ needs.get_changed_charts.outputs.changed_charts }}
-    steps:
-
-    - name: Checkout stacked_charts 
-      uses: actions/checkout@v4
-      with:
-        repository: '${{ github.repository_owner }}/stacked_charts'
-        token: ${{ secrets.PUSH_TOKEN }}
-        path: stacked_charts
-        ref: ${{ env.STACKED_CHARTS_BRANCH }}
-
-    - name: Download build_vars artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: build_vars
-        path: ${{ github.workspace }}
-    - name: Check stacked charts
-      run: |
-        echo "Changed charts: ${{ env.changed_charts }}"
-        
   # cleanup:
   #   runs-on: ansible-dind
   #   needs: get_changed_charts
