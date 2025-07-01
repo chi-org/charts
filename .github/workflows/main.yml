@@ -82,7 +82,7 @@ jobs:
       run: |
         echo "Changed charts: ${{ steps.get_changed_charts.outputs.changed_charts}}"
         changed_charts="${{ steps.get_changed_charts.outputs.changed_charts}}"
-        mappingFile = "${{ github.workspace }}/stacked_charts//kubernetes/nmaa/image_chart_mapping.yml"
+        mappingFile="${{ github.workspace }}/stacked_charts//kubernetes/nmaa/image_chart_mapping.yml"
         found=0
         IFS=',' read -ra items <<< "$changed_charts"
 
