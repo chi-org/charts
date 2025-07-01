@@ -83,12 +83,13 @@ jobs:
         echo "Changed charts: ${{ steps.get_changed_charts.outputs.changed_charts}}"
         changed_charts="${{ steps.get_changed_charts.outputs.changed_charts}}"
         mappingFile="${{ github.workspace }}/stacked_charts//kubernetes/nmaa/image_chart_mapping.yml"
+        dependencyFile="${{ github.workspace }}/stacked_charts//kubernetes/nmaa/Chart.yml"
         found=0
         IFS=',' read -ra items <<< "$changed_charts"
 
         for item in "${items[@]}"; do
             echo "Checking if '$item' exists in $mappingFile"
-            if grep -q "$item" "$mappingFile"; then
+            if grep -q "$item" "$mappingFile" || grep -q "$item" "$dependencyFile";  then
                 echo "Found '$item' in $mappingFile"
                 found=1
                 break
@@ -96,9 +97,9 @@ jobs:
         done
 
         if [ "$found" -eq 1 ]; then
-            echo "At least one chart was found in the nmaa mapping file."
+            echo "At least one chart was found in the nmaa stacked_charts."
         else
-            echo "No charts found in the nmaa mapping file."
+            echo "No charts found in the nmaa stacked_charts."
         fi
 
     - name: Init build_vars.yml file
