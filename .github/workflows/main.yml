@@ -130,6 +130,31 @@ jobs:
         fi
 
     
+    - name: "Check stacked charts: RADIUS"
+      if: ${{ steps.check_no_ci.outputs.no_ci != 'true' && steps.get_changed_charts.outputs.changed_charts != '' }}
+      run: |
+        echo "Changed charts: ${{ steps.get_changed_charts.outputs.changed_charts}}"
+        changed_charts="${{ steps.get_changed_charts.outputs.changed_charts}}"
+        mappingFile="${{ github.workspace }}/stacked_charts//kubernetes/radius/image_chart_mapping.yml"
+        dependencyFile="${{ github.workspace }}/stacked_charts//kubernetes/radius/Chart.yml"
+        found=0
+        IFS=',' read -ra items <<< "$changed_charts"
+
+        for item in "${items[@]}"; do
+            echo "Checking if '$item' exists in $mappingFile"
+            if { [ -f "$mappingFile" ] &&  grep -q "$item" "$mappingFile"; } || { [ -f "$dependencyFile" ] && grep -q "$item" "$dependencyFile"; };  then
+                echo "Found '$item' in $mappingFile"
+                found=1
+                break
+            fi
+        done
+
+        if [ "$found" -eq 1 ]; then
+            echo "At least one chart was found in the RADIUS stacked_charts."
+            echo 'RADIUS:' >> ${{ github.workspace }}/result.conf
+        else
+            echo "No charts found in the RADIUS stacked_charts."
+        fi
     - name: "Check stacked charts: TACGUI"
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' && steps.get_changed_charts.outputs.changed_charts != '' }}
       run: |
