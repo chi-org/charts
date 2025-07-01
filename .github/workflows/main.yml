@@ -63,7 +63,6 @@ jobs:
           GITHUB_COMPARE_BRANCH="main^"
         fi
         get_changed_charts=`git diff ${{ env.COMMIT_FULL_ID }} "origin/$GITHUB_COMPARE_BRANCH" --name-only | grep -oE "^kubernetes/(\w+[-]?)+(\w+)" | grep -oE "(\w+[-]?)+(\w+)$" | grep -v README| sort -u`
-        echo "Get changed charts: $get_changed_charts"
         changed_charts=$(echo $get_changed_charts | tr " " ",")
         changed_charts="$(echo -e "$changed_charts" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
         echo "Changed charts: $changed_charts"
@@ -78,10 +77,29 @@ jobs:
         path: stacked_charts
         ref: ${{ env.STACKED_CHARTS_BRANCH }}
     
-    - name: Check stacked charts
+    - name: "Check stacked charts: NMAA"
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' && steps.get_changed_charts.outputs.changed_charts != '' }}
       run: |
-        echo "Changed charts: ${{ env.changed_charts }}"
+        echo "Changed charts: ${{ steps.get_changed_charts.outputs.changed_charts}}"
+        changed_charts="${{ steps.get_changed_charts.outputs.changed_charts}}"
+        mappingFile = "${{ github.workspace }}/stacked_charts//kubernetes/nmaa/image_chart_mapping.yml"
+        found=0
+        IFS=',' read -ra items <<< "$changed_charts"
+
+        for item in "${items[@]}"; do
+            echo "Checking if '$item' exists in $mappingFile"
+            if grep -q "$item" "$mappingFile"; then
+                echo "Found '$item' in $mappingFile"
+                found=1
+                break
+            fi
+        done
+
+        if [ "$found" -eq 1 ]; then
+            echo "At least one chart was found in the nmaa mapping file."
+        else
+            echo "No charts found in the nmaa mapping file."
+        fi
 
     - name: Init build_vars.yml file
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
