@@ -22,11 +22,26 @@ on:
         description: "Stacked charts repo's branch to clone"
         type: string
         default: master
+      junos_branch:
+        description: "Junos repo's branch to clone"
+        type: string
+        default: master
+      installation_branch:
+        description: "Installation repo's branch to clone"
+        type: string
+        default: master
+      cicd_utilities_branch:
+        description: "CICD utilities repo's branch to clone"
+        type: string
+        default: main
 
 env:
   COMMIT_FULL_ID: ${{ inputs.commit_id || github.sha }}
   WAIT_SECONDS: ${{ inputs.wait_seconds || 600 }} 
   STACKED_CHARTS_BRANCH: ${{ inputs.stacked_charts_branch || 'master' }}
+  CICD_UTILITIES_BRANCH: ${{ inputs.cicd_utilities_branch || 'main' }}
+  INSTALLATION_BRANCH: ${{ inputs.installation_branch || 'master' }}
+  JUNOS_BRANCH: ${{ inputs.junos_branch || 'master' }}
 
 
 jobs:  
@@ -37,6 +52,8 @@ jobs:
       packages: write
     outputs:
       no_ci: ${{ steps.check_no_ci.outputs.no_ci || 'false' }}
+      check_nmaa: ${{ steps.check_nmaa.outputs.need_check || 'false' }}
+      check_elk: ${{ steps.check_elk.outputs.need_check || 'false' }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -78,6 +95,7 @@ jobs:
         ref: ${{ env.STACKED_CHARTS_BRANCH }}
     
     - name: "Check stacked charts: NMAA"
+      id: check_nmaa
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' && steps.get_changed_charts.outputs.changed_charts != '' }}
       run: |
         echo "Changed charts: ${{ steps.get_changed_charts.outputs.changed_charts}}"
@@ -98,12 +116,14 @@ jobs:
 
         if [ "$found" -eq 1 ]; then
             echo "At least one chart was found in the NMAA stacked_charts."
+            echo "need_check=true" >> $GITHUB_OUTPUT
             echo 'NMAA:' >> ${{ github.workspace }}/result.conf
         else
             echo "No charts found in the NMAA stacked_charts."
         fi
 
     - name: "Check stacked charts: ELK"
+      id: check_elk
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' && steps.get_changed_charts.outputs.changed_charts != '' }}
       run: |
         echo "Changed charts: ${{ steps.get_changed_charts.outputs.changed_charts}}"
@@ -124,12 +144,12 @@ jobs:
 
         if [ "$found" -eq 1 ]; then
             echo "At least one chart was found in the ELK stacked_charts."
+            echo "need_check=true" >> $GITHUB_OUTPUT
             echo 'ELK:' >> ${{ github.workspace }}/result.conf
         else
             echo "No charts found in the ELK stacked_charts."
         fi
 
-    
     - name: "Check stacked charts: RADIUS"
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' && steps.get_changed_charts.outputs.changed_charts != '' }}
       run: |
@@ -180,75 +200,411 @@ jobs:
         else
             echo "No charts found in the TACGUI stacked_charts."
         fi
+
+  create_vm:
+    if: ${{ needs.check_charts.output.no_ci != 'true' && ( needs.check_charts.output.check_nmaa == 'true' || needs.check_charts.output.check_elk == 'true') }}
+    needs: check_charts
+    runs-on: ansible-dind
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Checkout SVTECH_CICD_Utilities 
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/SVTECH_CICD_Utilities'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: SVTECH_CICD_Utilities
+        ref: ${{ env.CICD_UTILITIES_BRANCH }}
+
     - name: Init build_vars.yml file
-      if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
       run: |
         # touch ${{ github.workspace }}/build_vars.yml
         
         cat << EOF > ${{ github.workspace }}/build_vars.yml
-        build_id: "."
-        build_vars_path: "${{ github.workspace }}"
-        # commit: "$GIT_COMMIT"
-        # comment: "$commit_comment"
-        build_var_path: ${{ github.workspace }}/build_vars.yml
-        # repo_path: $REPO_PATH
-        # git_branch: $GIT_BRANCH
-        # git_url: $GIT_URL
-        ROLE: "automation"
-        # MODE: $MODE
-        # NEW_ENV: $NEW_ENV
-        # NEW_TOPO: $NEW_TOPO
-        # CLEANUP_ENV: $CLEANUP_ENV
-        # CLEANUP_TOPO: $CLEANUP_TOPO
-        # INSTALLATION_REPO_TAG: $INSTALLATION_REPO_TAG
-        # AUTOMATION_REPO_TAG: $branch
+        BUILD_VARS_PATH: "${{ github.workspace }}"
+        CHARTS_BRANCH: $CHARTS_BRANCH
         STACKED_CHARTS_BRANCH: $STACKED_CHARTS_BRANCH
-        PUBLIC_HELMCHARTS_REPO_TAG: main
-        charts: ${{ steps.get_changed_charts.outputs.changed_charts }}
+        AUTOMATION_BRANCH: ${{ github.ref_name }}
+        INSTALLATION_BRANCH: $INSTALLATION_BRANCH
+        CI_UTILITIES_BRANCH: $CI_UTILITIES_BRANCH
+        images_test: ${{ env.IMAGE_NAME }}
+        tag_test: ${{ env.IMAGE_TEST_TAG }}
+        repo_path: ${{ github.workspace }}
         EOF
 
+    - name: Import global vars
+      run: |
+        mkdir -p ${{ github.workspace }}/auto_testing_global_vars
+        cat << EOF >> ${{ github.workspace }}/build_vars.yml
+        hosts_list:
+        - stable_MC1
+        # - stable_MC2
+        - stable_AGG11
+        - stable_AGG12
+        - stable_AGG13
+        - stable_AGG21
+        - stable_AGG22
+        - stable_CSG11
+        - stable_CSG12
+        - stable_CSG13
+          #- stable_CSG21
+          #- stable_CSG22
+          #- stable_CSG23
+          #- stable_CSG31
+          #- stable_CSG32
+          #- stable_CSG33
+        labip: 10.98.0.12
+        monitor_ip: 100.1.20.0/27
+        out_lab_address: 10.98.100.30
+        user: stable
+        vip_ip: 10.98.0.120
+        EOF
+    - name: Create VMs on vcenter
+      run: |
+        ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/vm--create_k8s_vm.yml -e "BUILD_VARS_PATH=${{ github.workspace }}"
+
     - name: Upload artifact
-      if: always() && !cancelled()
+      if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: build_vars
+        name: vm_vars
         path: ${{ github.workspace }}/build_vars.yml
 
-  # cleanup:
-  #   runs-on: ansible-dind
-  #   needs: get_changed_charts
-  #   if: needs.get_changed_charts.outputs.no_ci != 'true'
-  #   # if: always() && !cancelled()
-  #   steps:
-  #   - name: test
-  #     run: |
-  #       echo "testing"
-#       - name: Wait before cleanup
-#         continue-on-error: true
-#         run: |
-#           if [ ${{ env.WAIT_SECONDS }} -gt 3600 ]; then
-#             echo "Wait seconds is too long, set to 3600"
-#             echo "WAIT_SECONDS=3600" >> $GITHUB_ENV
-#           fi
-#           echo "Wait seconds: ${{ env.WAIT_SECONDS }}"
-#           echo "Waiting before cleanup..."
-#           sleep ${{ env.WAIT_SECONDS }}
+  install_nmaa_on_vm:
+    if: ${{ needs.create_vm.outputs.no_ci != 'true' && needs.check_charts.outputs.check_nmaa == 'true' }}
+    needs: 
+      - create_vm
+    runs-on: ansible-dind
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.COMMIT_FULL_ID }}
 
-#       - name: Checkout SVTECH_CI_utilities 
-#         uses: actions/checkout@v4
-#         with:
-#           repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
-#           token: ${{ secrets.PUSH_TOKEN }}
-#           path: SVTECH_CI_utilities
-#           ref: dev-jenkins
+    - name: Checkout SVTECH_CICD_Utilities 
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/SVTECH_CICD_Utilities'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: SVTECH_CICD_Utilities
+        ref: ${{ env.CICD_UTILITIES_BRANCH }}
 
-#       - name: Download build_vars artifact
-#         uses: actions/download-artifact@v4
-#         with:
-#           name: build_vars
-#           path: ${{ github.workspace }}
+    - name: Checkout SVTECH-installation-automation
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/SVTECH-installation-automation'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: SVTECH-installation-automation
+        ref: ${{ env.INSTALLATION_BRANCH }}
 
-#       - name: Cleanup Environment
-#         run: |
-#          ansible-playbook ${{ github.workspace }}/SVTECH_CI_utilities/auto_testing/vm--cleanup_vms.yml -e "BUILD_ID=. BUILD_VARS_PATH=${{ github.workspace }}"
+    - name: Checkout SVTECH-Junos-Automation
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/SVTECH-Junos-Automation'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: SVTECH-Junos-Automation
+        ref: ${{ env.JUNOS_BRANCH }}
+
+    - name: Checkout stacked_charts 
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/stacked_charts'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: stacked_charts
+        ref: ${{ env.STACKED_CHARTS_BRANCH }}
+
+    - name: Download build_vars artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: vm_vars
+        path: ${{ github.workspace }}
+
+    - name: Deploy installation
+      run: |
+        export ANSIBLE_HOST_KEY_CHECKING=False
+        ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/create_inventory_file.yml \
+            -e "BUILD_VARS_PATH=${{ github.workspace }} \
+            template_file=${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/templates/inventory_k8s_nmaa.j2 \
+            STACKED_CHARTS_BRANCH=${{ env.STACKED_CHARTS_BRANCH }} \
+            AUTOMATION_BRANCH=${{ env.JUNOS_BRANCH }} \
+            STACK=nmaa"
+    - name: Deploy NMAA Stack
+      run: |
+        # Install NMAA
+        export ANSIBLE_HOST_KEY_CHECKING=False
+        ansible-playbook ${{ github.workspace }}/SVTECH-installation-automation/k8s_nms_for_ci.yml \
+                    -e @${{ github.workspace }}/stacked_charts/kubernetes/nmaa/image_chart_mapping.yml \
+                    -e "GH_TOKEN=${{ secrets.PUSH_TOKEN }}" \
+                    -e "GH_FG_TOKEN=${{ secrets.PUSH_TOKEN }}" \
+                    -e "GH_USERNAME=svtechnmaa" \
+                    -e "REPO_PATH=${{ github.workspace }}" \
+                    -i ${{ github.workspace }}/nmaa_inventory
+
+    - name: Upload artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: nmaa_build_vars
+        path: ${{ github.workspace }}/build_vars.yml
+
+  test_nmaa:
+    if: ${{ needs.create_vm.outputs.no_ci != 'true' && needs.check_charts.outputs.check_nmaa == 'true' }}
+    runs-on: robot-dind
+    needs: install_nmaa_on_vm 
+    steps:
+      - name: Checkout SVTECH_CICD_Utilities 
+        uses: actions/checkout@v4
+        with:
+          repository: '${{ github.repository_owner }}/SVTECH_CICD_Utilities'
+          token: ${{ secrets.PUSH_TOKEN }}
+          path: SVTECH_CICD_Utilities
+          ref: ${{ env.CICD_UTILITIES_BRANCH }}
+
+      - name: Download build_vars artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nmaa_build_vars
+          path: ${{ github.workspace }}
+
+      - name: Run NMAA integration tests - Common Check
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/nmaa/common_check/run_testcase.sh" -D "${{ github.workspace }}" -I .
+      
+      - name: Run NMAA integration tests - Topology Check
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/nmaa/topology/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: Run NMAA integration tests - RUNDECK
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/nmaa/rundeck/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: Run NMAA integration tests - Icinga2
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/nmaa/icinga2/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: Run NMAA integration tests - Databases
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/nmaa/databases/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: Run NMAA integration tests - Icinga2-report
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/nmaa/icinga2-report/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: Run NMAA integration tests - Thruk
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/nmaa/thruk/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: Run NMAA integration tests - Grafana
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/nmaa/grafana/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: Run NMAA integration tests - Nagvis
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/nmaa/nagvis/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: Run NMAA integration tests - IcingaWeb
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/nmaa/icingaweb/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: Run NMAA integration tests - Gitlist
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/nmaa/gitlist/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: 'Upload Artifact'
+        if: always()
+        uses: actions/upload-artifact@v4.6.0
+        with:
+          name: robot-test-result-#${{ github.run_number }}
+          path: ${{ github.workspace }}/test_result
+
+  install_elk_on_vm:
+    if: ${{ needs.create_vm.outputs.no_ci != 'true' && needs.check_charts.outputs.check_elk == 'true' }}
+    needs: 
+      - create_vm
+    runs-on: ansible-dind
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.COMMIT_FULL_ID }}
+
+    - name: Checkout SVTECH_CICD_Utilities 
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/SVTECH_CICD_Utilities'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: SVTECH_CICD_Utilities
+        ref: ${{ env.CICD_UTILITIES_BRANCH }}
+
+    - name: Checkout SVTECH-installation-automation
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/SVTECH-installation-automation'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: SVTECH-installation-automation
+        ref: ${{ env.INSTALLATION_BRANCH }}
+
+    - name: Checkout SVTECH-Junos-Automation
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/SVTECH-Junos-Automation'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: SVTECH-Junos-Automation
+        ref: ${{ env.JUNOS_BRANCH }}
+
+    - name: Checkout stacked_charts 
+      uses: actions/checkout@v4
+      with:
+        repository: '${{ github.repository_owner }}/stacked_charts'
+        token: ${{ secrets.PUSH_TOKEN }}
+        path: stacked_charts
+        ref: ${{ env.STACKED_CHARTS_BRANCH }}
+
+    - name: Download build_vars artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: vm_vars
+        path: ${{ github.workspace }}
+
+    - name: Deploy installation
+      run: |
+        export ANSIBLE_HOST_KEY_CHECKING=False
+        ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/create_inventory_file.yml \
+            -e "BUILD_VARS_PATH=${{ github.workspace }} \
+            template_file=${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/templates/inventory_k8s_elk.j2 \
+            STACKED_CHARTS_BRANCH=${{ env.STACKED_CHARTS_BRANCH }} \
+            AUTOMATION_BRANCH=${{ env.JUNOS_BRANCH }} \
+            STACK=elk"
+    - name: Deploy ELK Stack
+      run: |
+        # Install ELK
+        export ANSIBLE_HOST_KEY_CHECKING=False
+        ansible-playbook ${{ github.workspace }}/SVTECH-installation-automation/k8s_elk_for_ci.yml \
+                    -e @${{ github.workspace }}/stacked_charts/kubernetes/elk/image_chart_mapping.yml \
+                    -e "GH_TOKEN=${{ secrets.PUSH_TOKEN }}" \
+                    -e "GH_FG_TOKEN=${{ secrets.PUSH_TOKEN }}" \
+                    -e "GH_USERNAME=svtechnmaa" \
+                    -e "REPO_PATH=${{ github.workspace }}" \
+                    -i ${{ github.workspace }}/elk_inventory
+
+    - name: Upload artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: elk_build_vars
+        path: ${{ github.workspace }}/build_vars.yml
+
+  test_elk:
+    if: ${{ needs.create_vm.outputs.no_ci != 'true' && needs.check_charts.outputs.check_elk == 'true' }}
+    runs-on: robot-dind
+    needs: install_elk_on_vm 
+    steps:
+      - name: Checkout SVTECH_CICD_Utilities 
+        uses: actions/checkout@v4
+        with:
+          repository: '${{ github.repository_owner }}/SVTECH_CICD_Utilities'
+          token: ${{ secrets.PUSH_TOKEN }}
+          path: SVTECH_CICD_Utilities
+          ref: ${{ env.CICD_UTILITIES_BRANCH }}
+
+      - name: Download build_vars artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: elk_build_vars
+          path: ${{ github.workspace }}
+
+      - name: Run ELK integration tests - ElasticSearch
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/elk/elasticsearch/run_testcase.sh" -D "${{ github.workspace }}" -I .
+      
+      - name: Run ELK integration tests - Kibana
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/elk/kibana/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: Run ELK integration tests - Databases
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/elk/databases/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: Run ELK integration tests - Grafana
+        if: always() && !cancelled()
+        run: |
+          sh "${{ github.workspace }}/SVTECH_CICD_Utilities/integration-test/elk/grafana/run_testcase.sh" -D "${{ github.workspace }}" -I .
+  
+      - name: 'Upload Artifact'
+        if: always()
+        uses: actions/upload-artifact@v4.6.0
+        with:
+          name: robot-test-result-#${{ github.run_number }}
+          path: ${{ github.workspace }}/test_result
+
+  cleanup:
+    runs-on: ansible-dind
+    needs: 
+      - test_nmaa 
+      - test_elk
+    if: always() && !cancelled() && ${{ needs.check_charts.output.no_ci != 'true' && ( needs.check_charts.output.check_nmaa == 'true' || needs.check_charts.output.check_elk == 'true')  }}
+    steps:
+      - name: Wait before cleanup
+        continue-on-error: true
+        run: |
+          if [ ${{ env.WAIT_SECONDS }} -gt 3600 ]; then
+            echo "Wait seconds is too long, set to 3600"
+            echo "WAIT_SECONDS=3600" >> $GITHUB_ENV
+          fi
+          echo "Wait seconds: ${{ env.WAIT_SECONDS }}"
+          echo "Waiting before cleanup..."
+          sleep ${{ env.WAIT_SECONDS }}
+
+      - name: Checkout SVTECH_CICD_Utilities 
+        uses: actions/checkout@v4
+        with:
+          repository: '${{ github.repository_owner }}/SVTECH_CICD_Utilities'
+          token: ${{ secrets.PUSH_TOKEN }}
+          path: SVTECH_CICD_Utilities
+          ref: ${{ env.CICD_UTILITIES_BRANCH }}
+
+      - name: Download build_vars artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vm_vars
+          path: ${{ github.workspace }}
+
+      - name: Download build_vars artifact
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: nmaa_build_vars
+          path: ${{ github.workspace }}
+
+      - name: Download build_vars artifact
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: elk_build_vars
+          path: ${{ github.workspace }}
+
+      - name: Cleanup Environment
+        run: |
+         ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/vm--cleanup_vms.yml -e "BUILD_VARS_PATH=${{ github.workspace }}"
     
