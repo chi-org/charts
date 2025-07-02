@@ -201,6 +201,14 @@ jobs:
             echo "No charts found in the TACGUI stacked_charts."
         fi
 
+    - name: Debug
+      run: |
+        echo "no_ci: ${{ steps.check_no_ci.outputs.no_ci }}"
+        echo "check_nmaa: ${{ steps.check_nmaa.outputs.need_check }}"
+        echo "check_elk: ${{ steps.check_elk.outputs.need_check }}"
+        echo "result.conf content:"
+        cat ${{ github.workspace }}/result.conf
+    
   create_vm:
     if: ${{ needs.check_charts.output.no_ci != 'true' && ( needs.check_charts.output.check_nmaa == 'true' || needs.check_charts.output.check_elk == 'true') }}
     needs: check_charts
