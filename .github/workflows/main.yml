@@ -230,7 +230,7 @@ jobs:
         CI_UTILITIES_BRANCH: $CI_UTILITIES_BRANCH
         images_test: ${{ env.IMAGE_NAME }}
         tag_test: ${{ env.IMAGE_TEST_TAG }}
-        repo_path: ${{ github.workspace }}/SVTECH-Junos-Automation
+        repo_path: ..
         EOF
 
     - name: Import global vars
@@ -341,7 +341,7 @@ jobs:
                     -e "GH_TOKEN=${{ secrets.PUSH_TOKEN }}" \
                     -e "GH_FG_TOKEN=${{ secrets.PUSH_TOKEN }}" \
                     -e "GH_USERNAME=svtechnmaa" \
-                    -e "REPO_PATH=${{ github.workspace }}/SVTECH-Junos-Automation" \
+                    -e "REPO_PATH=.." \
                     -i ${{ github.workspace }}/nmaa_inventory
 
     - name: Upload artifact
@@ -502,7 +502,7 @@ jobs:
                     -e "GH_TOKEN=${{ secrets.PUSH_TOKEN }}" \
                     -e "GH_FG_TOKEN=${{ secrets.PUSH_TOKEN }}" \
                     -e "GH_USERNAME=svtechnmaa" \
-                    -e "REPO_PATH=${{ github.workspace }}/SVTECH-Junos-Automation" \
+                    -e "REPO_PATH=.." \
                     -i ${{ github.workspace }}/elk_inventory
 
     - name: Upload artifact
