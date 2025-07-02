@@ -200,14 +200,6 @@ jobs:
         else
             echo "No charts found in the TACGUI stacked_charts."
         fi
-
-    - name: Debug
-      run: |
-        echo "no_ci: ${{ steps.check_no_ci.outputs.no_ci }}"
-        echo "check_nmaa: ${{ steps.check_nmaa.outputs.need_check }}"
-        echo "check_elk: ${{ steps.check_elk.outputs.need_check }}"
-        echo "result.conf content:"
-        cat ${{ github.workspace }}/result.conf
     
   create_vm:
     if: ${{ needs.check_charts.outputs.no_ci != 'true' && ( needs.check_charts.outputs.check_nmaa == 'true' || needs.check_charts.outputs.check_elk == 'true') }}
@@ -238,7 +230,7 @@ jobs:
         CI_UTILITIES_BRANCH: $CI_UTILITIES_BRANCH
         images_test: ${{ env.IMAGE_NAME }}
         tag_test: ${{ env.IMAGE_TEST_TAG }}
-        repo_path: ${{ github.workspace }}
+        repo_path: ${{ github.workspace }}/SVTECH-Junos-Automation
         EOF
 
     - name: Import global vars
@@ -349,7 +341,7 @@ jobs:
                     -e "GH_TOKEN=${{ secrets.PUSH_TOKEN }}" \
                     -e "GH_FG_TOKEN=${{ secrets.PUSH_TOKEN }}" \
                     -e "GH_USERNAME=svtechnmaa" \
-                    -e "REPO_PATH=${{ github.workspace }}" \
+                    -e "REPO_PATH=${{ github.workspace }}/SVTECH-Junos-Automation" \
                     -i ${{ github.workspace }}/nmaa_inventory
 
     - name: Upload artifact
@@ -510,7 +502,7 @@ jobs:
                     -e "GH_TOKEN=${{ secrets.PUSH_TOKEN }}" \
                     -e "GH_FG_TOKEN=${{ secrets.PUSH_TOKEN }}" \
                     -e "GH_USERNAME=svtechnmaa" \
-                    -e "REPO_PATH=${{ github.workspace }}" \
+                    -e "REPO_PATH=${{ github.workspace }}/SVTECH-Junos-Automation" \
                     -i ${{ github.workspace }}/elk_inventory
 
     - name: Upload artifact
@@ -571,7 +563,7 @@ jobs:
     needs: 
       - test_nmaa 
       - test_elk
-    if: always() && !cancelled() && ${{ needs.check_charts.outputs.no_ci != 'true' && ( needs.check_charts.outputs.check_nmaa == 'true' || needs.check_charts.outputs.check_elk == 'true')  }}
+    if: ${{ always() && !cancelled() &&  needs.check_charts.outputs.no_ci != 'true' && ( needs.check_charts.outputs.check_nmaa == 'true' || needs.check_charts.outputs.check_elk == 'true')  }}
     steps:
       - name: Wait before cleanup
         continue-on-error: true
