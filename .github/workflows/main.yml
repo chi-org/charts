@@ -210,7 +210,7 @@ jobs:
         cat ${{ github.workspace }}/result.conf
     
   create_vm:
-    if: ${{ needs.check_charts.output.no_ci != 'true' && ( needs.check_charts.output.check_nmaa == 'true' || needs.check_charts.output.check_elk == 'true') }}
+    if: ${{ needs.check_charts.outputs.no_ci != 'true' && ( needs.check_charts.outputs.check_nmaa == 'true' || needs.check_charts.outputs.check_elk == 'true') }}
     needs: check_charts
     runs-on: ansible-dind
     permissions:
@@ -571,7 +571,7 @@ jobs:
     needs: 
       - test_nmaa 
       - test_elk
-    if: always() && !cancelled() && ${{ needs.check_charts.output.no_ci != 'true' && ( needs.check_charts.output.check_nmaa == 'true' || needs.check_charts.output.check_elk == 'true')  }}
+    if: always() && !cancelled() && ${{ needs.check_charts.outputs.no_ci != 'true' && ( needs.check_charts.outputs.check_nmaa == 'true' || needs.check_charts.outputs.check_elk == 'true')  }}
     steps:
       - name: Wait before cleanup
         continue-on-error: true
