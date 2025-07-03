@@ -261,7 +261,7 @@ jobs:
         EOF
     - name: Create VMs on vcenter
       run: |
-        ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/vm--create_k8s_vm.yml -e "BUILD_VARS_PATH=${{ github.workspace }}"
+        ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/vm--create_k8s_vm.yml -e "BUILD_VARS_PATH=${{ github.workspace }}" -e "vm_annotation='Created by: \n- repo: ${{ github.repository }} \n- github workflow: #${{ github.run_number }} \n- commit: ${{ env.COMMIT_FULL_ID }}'" 
 
     - name: Upload artifact
       if: always()
@@ -562,6 +562,8 @@ jobs:
   cleanup:
     runs-on: ansible-dind
     needs: 
+      - check_charts
+      - create_vm
       - test_nmaa 
       - test_elk
     if: always() && !cancelled() &&  needs.check_charts.outputs.no_ci != 'true' && needs.create_vm.result == 'success' && ( needs.check_charts.outputs.check_nmaa == 'true' || needs.check_charts.outputs.check_elk == 'true') 
