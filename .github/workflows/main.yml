@@ -223,11 +223,10 @@ jobs:
         
         cat << EOF > ${{ github.workspace }}/build_vars.yml
         BUILD_VARS_PATH: "${{ github.workspace }}"
-        CHARTS_BRANCH: $CHARTS_BRANCH
-        STACKED_CHARTS_BRANCH: $STACKED_CHARTS_BRANCH
-        AUTOMATION_BRANCH: ${{ github.ref_name }}
-        INSTALLATION_BRANCH: $INSTALLATION_BRANCH
-        CI_UTILITIES_BRANCH: $CI_UTILITIES_BRANCH
+        CHARTS_BRANCH: ${{ github.ref_name }}
+        STACKED_CHARTS_BRANCH: ${{ env.STACKED_CHARTS_BRANCH }}
+        AUTOMATION_BRANCH: ${{ env.JUNOS_BRANCH }}
+        INSTALLATION_BRANCH: ${{ env.INSTALLATION_BRANCH }}
         images_test: ${{ env.IMAGE_NAME }}
         tag_test: ${{ env.IMAGE_TEST_TAG }}
         repo_path: ${{ github.workspace }}
@@ -590,20 +589,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: vm_vars
-          path: ${{ github.workspace }}
-
-      - name: Download build_vars artifact
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: nmaa_build_vars
-          path: ${{ github.workspace }}
-
-      - name: Download build_vars artifact
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: elk_build_vars
           path: ${{ github.workspace }}
 
       - name: Cleanup Environment
