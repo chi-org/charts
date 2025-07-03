@@ -271,8 +271,9 @@ jobs:
         path: ${{ github.workspace }}/build_vars.yml
 
   install_nmaa_on_vm:
-    if: ${{ needs.create_vm.outputs.no_ci != 'true' && needs.check_charts.outputs.check_nmaa == 'true' }}
+    if: ${{ needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.check_nmaa == 'true' }}
     needs: 
+      - check_charts
       - create_vm
     runs-on: ansible-dind
     permissions:
@@ -352,9 +353,11 @@ jobs:
         path: ${{ github.workspace }}/build_vars.yml
 
   test_nmaa:
-    if: ${{ needs.create_vm.outputs.no_ci != 'true' && needs.check_charts.outputs.check_nmaa == 'true' }}
+    if: ${{ needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.check_nmaa == 'true' }}
     runs-on: robot-dind
-    needs: install_nmaa_on_vm 
+    needs:
+      - check_charts 
+      - install_nmaa_on_vm 
     steps:
       - name: Checkout SVTECH_CICD_Utilities 
         uses: actions/checkout@v4
@@ -433,8 +436,9 @@ jobs:
           path: ${{ github.workspace }}/test_result
 
   install_elk_on_vm:
-    if: ${{ needs.create_vm.outputs.no_ci != 'true' && needs.check_charts.outputs.check_elk == 'true' }}
+    if: ${{ needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.check_elk == 'true' }}
     needs: 
+      - check_charts
       - test_nmaa
     runs-on: ansible-dind
     permissions:
@@ -514,9 +518,11 @@ jobs:
         path: ${{ github.workspace }}/build_vars.yml
 
   test_elk:
-    if: ${{ needs.create_vm.outputs.no_ci != 'true' && needs.check_charts.outputs.check_elk == 'true' }}
+    if: ${{ needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.check_elk == 'true' }}
     runs-on: robot-dind
-    needs: install_elk_on_vm 
+    needs: 
+      - check_charts
+      - install_elk_on_vm 
     steps:
       - name: Checkout SVTECH_CICD_Utilities 
         uses: actions/checkout@v4
