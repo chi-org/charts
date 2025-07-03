@@ -69,7 +69,6 @@ jobs:
             echo "Found 'no-ci' in commit message. Stop workflow !!!"
             echo "no_ci=true" >> $GITHUB_OUTPUT
         fi
-        exit 1;
 
     - name: Get changed charts
       if: ${{ steps.check_no_ci.outputs.no_ci != 'true' }}
@@ -565,7 +564,7 @@ jobs:
     needs: 
       - test_nmaa 
       - test_elk
-    if: ${{ always() && !cancelled() &&  needs.check_charts.outputs.no_ci != 'true' && needs.create_vm.result == 'success' && ( needs.check_charts.outputs.check_nmaa == 'true' || needs.check_charts.outputs.check_elk == 'true')  }}
+    if: always() && !cancelled() &&  needs.check_charts.outputs.no_ci != 'true' && needs.create_vm.result == 'success' && ( needs.check_charts.outputs.check_nmaa == 'true' || needs.check_charts.outputs.check_elk == 'true') 
     steps:
       - name: Wait before cleanup
         continue-on-error: true
