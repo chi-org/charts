@@ -433,7 +433,7 @@ jobs:
         uses: actions/upload-artifact@v4.6.0
         with:
           name: robot-nmaa-result-#${{ github.run_number }}
-          path: ${{ github.workspace }}/nmaa/test_result
+          path: ${{ github.workspace }}/test_result
 
   install_elk_on_vm:
     if: ${{ needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.check_elk == 'true' }}
@@ -563,7 +563,7 @@ jobs:
         uses: actions/upload-artifact@v4.6.0
         with:
           name: robot-elk-result-#${{ github.run_number }}
-          path: ${{ github.workspace }}/elk/test_result
+          path: ${{ github.workspace }}/test_result
 
   cleanup:
     runs-on: ansible-dind
