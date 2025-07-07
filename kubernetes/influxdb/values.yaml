@@ -214,7 +214,7 @@ influxdb:
 
   ## Number of InfluxDB(TM) replicas to deploy
   ##
-  replicaCount: 3 
+  replicaCount: 3
 
   ## Update strategy, can be set to RollingUpdate or OnDelete by default.
   ## ref: https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#updating-statefulsets
