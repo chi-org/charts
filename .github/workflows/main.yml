@@ -588,7 +588,7 @@ jobs:
           python-version: '3.11'
       - name: Update helm chart version based on commit
         run: |
-          python3 ${{ github.workspace }}/python_script/public_helmchart_release.py \
+          python3 ${{ github.workspace }}/SVTECH_CICD_Utilities/python_script/public_helmchart_release.py \
             --BUILD_VARS_PATH=${{ github.workspace }} \
             --GITHUB_TOKEN=${{ secrets.PUSH_TOKEN}} \
             --OWNER=chi-org \
