@@ -586,6 +586,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          cd ${{ github.workspace }}/SVTECH_CICD_Utilities/python_script/
+          pip install -r requirements.txt
       - name: Update helm chart version based on commit
         run: |
           python3 ${{ github.workspace }}/SVTECH_CICD_Utilities/python_script/public_helmchart_release.py \
