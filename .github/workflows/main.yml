@@ -646,6 +646,10 @@ jobs:
           git remote set-url origin https://phamtranlinhchi:${{ secrets.PUSH_TOKEN }}@github.com/chi-org/stacked_charts.git
           git push origin master
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
       - name: Semantic Release charts
         uses: cycjimmy/semantic-release-action@v4
         id: semantic
