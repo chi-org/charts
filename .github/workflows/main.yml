@@ -567,12 +567,12 @@ jobs:
           path: ${{ github.workspace }}/test_result
 
   release:
-    # if: ${{ !failure() && !cancelled() && github.ref_name == 'main' && github.event_name != 'workflow_dispatch' && needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.changed_charts != '' }}
+    if: ${{ !failure() && !cancelled() && github.ref_name == 'main' && github.event_name != 'workflow_dispatch' && needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.changed_charts != '' }}
     runs-on: ubuntu-dind
-    # needs: 
-    #   - check_charts
-    #   - test_nmaa 
-    #   - test_elk
+    needs: 
+      - check_charts
+      - test_nmaa 
+      - test_elk
     steps:
       - name: Checkout SVTECH_CICD_Utilities 
         uses: actions/checkout@v4
@@ -619,7 +619,7 @@ jobs:
             --BUILD_VARS_PATH=${{ github.workspace }} \
             --GITHUB_TOKEN=${{ secrets.PUSH_TOKEN}} \
             --OWNER=chi-org \
-            --charts_string=mariadb-galera \
+            --charts_string=${{ needs.check_charts.outputs.changed_charts }} \
             --REPO=charts
 
       - name: Commit Release charts
