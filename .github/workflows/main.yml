@@ -624,7 +624,7 @@ jobs:
 
       - name: Release charts
         run: |
-          artifacthub_path="${{ github.workspace }}/charts/artifacthub
+          artifacthub_path="${{ github.workspace }}/charts/artifacthub"
           helm repo index "$artifacthub_path"
           cd ${{ github.workspace }}/charts
           git checkout main
