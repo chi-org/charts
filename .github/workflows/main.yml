@@ -663,7 +663,7 @@ jobs:
     needs: 
       - check_charts
       - create_vm
-      - test_nmaa 
+      - test_nmaa
       - test_elk
     if: always() && !cancelled() && needs.check_charts.outputs.no_ci != 'true' && needs.create_vm.result == 'success' && ( needs.check_charts.outputs.check_nmaa == 'true' || needs.check_charts.outputs.check_elk == 'true') 
     steps:
