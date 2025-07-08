@@ -588,6 +588,14 @@ jobs:
           ref: ${{ env.COMMIT_FULL_ID }}
           path: charts
 
+      - name: Checkout stacked_charts 
+        uses: actions/checkout@v4
+        with:
+          repository: '${{ github.repository_owner }}/stacked_charts'
+          token: ${{ secrets.PUSH_TOKEN }}
+          path: stacked_charts
+          ref: ${{ env.STACKED_CHARTS_BRANCH }}
+
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
