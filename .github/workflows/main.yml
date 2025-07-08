@@ -567,7 +567,7 @@ jobs:
           path: ${{ github.workspace }}/test_result
 
   release:
-    if: ${{ !failure() && !cancelled() && github.ref_name == 'main' && github.event_name != 'workflow_dispatch' && needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.changed_charts != '' }}
+    # if: ${{ !failure() && !cancelled() && github.ref_name == 'main' && github.event_name != 'workflow_dispatch' && needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.changed_charts != '' }}
     runs-on: ubuntu-dind
     needs: 
       - check_charts
@@ -581,6 +581,12 @@ jobs:
           token: ${{ secrets.PUSH_TOKEN }}
           path: SVTECH_CICD_Utilities
           ref: ${{ env.CICD_UTILITIES_BRANCH }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.COMMIT_FULL_ID }}
+          path: charts
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
