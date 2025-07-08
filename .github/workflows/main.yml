@@ -627,8 +627,9 @@ jobs:
           artifacthub_path="${{ github.workspace }}/charts/artifacthub"
           helm repo index "$artifacthub_path"
           cd ${{ github.workspace }}/charts
-          ls
-          git branch
+          # git remote set-url origin https://svtechnmaa:$GIT_TOKEN@github.com/svtechnmaa/charts.git
+          git remote set-url origin https://phamtranlinhchi:${{ secrets.PUSH_TOKEN }}@github.com/chi-org/charts.git
+          git fetch origin main
           git checkout main
           # git config --global user.name "svtechnmaa"
           # git config --global user.email "nmaa@svtech.com.vn"
@@ -636,8 +637,6 @@ jobs:
           git config --global user.email "phamtranlinhchi02@gmail.com"
           git add .
           git commit -m "no-ci: Release"
-          # git remote set-url origin https://svtechnmaa:$GIT_TOKEN@github.com/svtechnmaa/charts.git
-          git remote set-url origin https://phamtranlinhchi:${{ secrets.PUSH_TOKEN }}@github.com/chi-org/charts.git
           git push origin main
           sleep 10
           export GH_TOKEN=${{ secrets.PUSH_TOKEN }} && semantic-release --no-ci
