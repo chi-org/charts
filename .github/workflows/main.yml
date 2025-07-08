@@ -603,7 +603,7 @@ jobs:
             --BUILD_VARS_PATH=${{ github.workspace }} \
             --GITHUB_TOKEN=${{ secrets.PUSH_TOKEN}} \
             --OWNER=chi-org \
-            --charts_string=${{ needs.check_charts.outputs.changed_charts }} \
+            --charts_string=mariadb\
             --REPO=charts
 
       - name: Release charts
