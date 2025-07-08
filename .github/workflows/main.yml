@@ -627,6 +627,8 @@ jobs:
           artifacthub_path="${{ github.workspace }}/charts/artifacthub"
           helm repo index "$artifacthub_path"
           cd ${{ github.workspace }}/charts
+          ls
+          git branch
           git checkout main
           # git config --global user.name "svtechnmaa"
           # git config --global user.email "nmaa@svtech.com.vn"
