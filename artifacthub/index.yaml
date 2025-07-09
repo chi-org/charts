@@ -3682,8 +3682,8 @@ entries:
     digest: 7b8ed93b358620aee908abee6f0838f12766b28fae48e3cc1c75eeb45e639ed9
     name: mariadb-galera
     urls:
-    - mariadb-galera-5.9.12.tgz
-    version: 5.9.12
+    - mariadb-galera-5.9.9.tgz
+    version: 5.9.9
   - annotations:
       category: Database
     apiVersion: v2
@@ -3714,8 +3714,8 @@ entries:
     digest: 8a5381a1a1f8910db26938706e567d9eb334aff8003c530eddd07794616ba8c1
     name: mariadb-galera
     urls:
-    - mariadb-galera-5.9.10.tgz
-    version: 5.9.10
+    - mariadb-galera-5.9.9.tgz
+    version: 5.9.9
   - annotations:
       category: Database
     apiVersion: v2
