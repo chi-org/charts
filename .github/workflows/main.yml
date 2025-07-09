@@ -437,9 +437,10 @@ jobs:
           path: ${{ github.workspace }}/test_result
 
   install_elk_on_vm:
-    if: ${{ needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.check_elk == 'true' }}
+    if: ${{ always() && !cancelled() && needs.create_vm.result == 'success' && needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.check_elk == 'true' }}
     needs: 
       - check_charts
+      - create_vm
       - test_nmaa
     runs-on: ansible-dind
     permissions:
@@ -519,7 +520,7 @@ jobs:
         path: ${{ github.workspace }}/build_vars.yml
 
   test_elk:
-    if: ${{ needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.check_elk == 'true' }}
+    if: ${{ always() && !cancelled() && needs.install_elk_on_vm.result == 'success' && needs.check_charts.outputs.no_ci != 'true' && needs.check_charts.outputs.check_elk == 'true' }}
     runs-on: robot-dind
     needs: 
       - check_charts
@@ -667,7 +668,57 @@ jobs:
       - test_elk
     if: always() && !cancelled() && needs.check_charts.outputs.no_ci != 'true' && needs.create_vm.result == 'success' && ( needs.check_charts.outputs.check_nmaa == 'true' || needs.check_charts.outputs.check_elk == 'true') 
     steps:
+      - name: Checkout code
+        if: needs.test_elk.result != 'success' || needs.test_nmaa.result != 'success'      
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.COMMIT_FULL_ID }}
+
+      - name: Get Commit ID and Committer Info
+        if: needs.test_elk.result != 'success' || needs.test_nmaa.result != 'success'
+        run: |
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
+            COMMIT_ID=${{ env.COMMIT_FULL_ID }}
+            COMMITTER_EMAIL=$(git show -s --format='%ce' $COMMIT_ID)
+            COMMITTER_NAME=$(git show -s --format='%cn' $COMMIT_ID)
+          else
+            COMMIT_ID=${{ github.event.head_commit.id }}
+            COMMITTER_EMAIL=${{ github.event.head_commit.committer.email }}
+            COMMITTER_NAME=${{ github.event.head_commit.committer.name }}
+          fi
+
+          echo "COMMIT_ID=${COMMIT_ID}" >> $GITHUB_ENV
+          echo "COMMITTER_EMAIL=${COMMITTER_EMAIL}" >> $GITHUB_ENV
+          echo "COMMITTER_NAME=${COMMITTER_NAME}" >> $GITHUB_ENV
+        
+
+      - name: Send mail to committer
+        if: needs.test_elk.result != 'success' || needs.test_nmaa.result != 'success'
+        continue-on-error: true
+        uses: dawidd6/action-send-mail@v6
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ vars.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "[SVTECH GITHUB] Workflow #${{ github.run_number }} from repo ${{ github.repository }} failed!"
+          body: |
+            Hi ${{ env.COMMITTER_NAME }},
+
+            The workflow #${{ github.run_number }} from repo ${{ github.repository }} has failed.
+            After the failure, the workflow will wait for ${{ env.WAIT_SECONDS }}s before cleaning up the environment.
+            
+            Please check the details and take appropriate action at: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            Best regards,
+            SRE Team
+          to: ${{ env.COMMITTER_EMAIL }}
+          from: ${{ vars.MAIL_USERNAME }}
+
+
       - name: Wait before cleanup
+        if: needs.test_elk.result != 'success' || needs.test_nmaa.result != 'success'
         continue-on-error: true
         run: |
           if [ ${{ env.WAIT_SECONDS }} -gt 3600 ]; then
