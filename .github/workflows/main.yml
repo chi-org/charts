@@ -323,7 +323,7 @@ jobs:
         name: vm_vars
         path: ${{ github.workspace }}
 
-    - name: Deploy installation
+    - name: Create inventory file for NMAA Stack
       run: |
         export ANSIBLE_HOST_KEY_CHECKING=False
         ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/create_inventory_file.yml \
@@ -489,7 +489,7 @@ jobs:
         name: vm_vars
         path: ${{ github.workspace }}
 
-    - name: Deploy installation
+    - name: Create inventory file for ELK Stack
       run: |
         export ANSIBLE_HOST_KEY_CHECKING=False
         ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/create_inventory_file.yml \
