@@ -34,7 +34,8 @@ on:
         default: main
 
 env:
-  COMMIT_FULL_ID: ${{ inputs.commit_id || github.sha }}
+  REPO_BRANCH: ${{ github.head_ref || github.ref_name }} # To handle both push and pull_request events
+  COMMIT_FULL_ID: ${{ inputs.commit_id || github.event.after || github.sha }} # Default to the latest commit ID for push and pull_request events, also handle workflow_dispatch with no commit_id input
   WAIT_SECONDS: ${{ inputs.wait_seconds || 600 }} 
   STACKED_CHARTS_BRANCH: ${{ inputs.stacked_charts_branch || 'master' }}
   CICD_UTILITIES_BRANCH: ${{ inputs.cicd_utilities_branch || 'main' }}
@@ -222,7 +223,7 @@ jobs:
         
         cat << EOF > ${{ github.workspace }}/build_vars.yml
         BUILD_VARS_PATH: "${{ github.workspace }}"
-        CHARTS_BRANCH: ${{ github.ref_name }}
+        CHARTS_BRANCH: ${{ env.REPO_BRANCH }}
         STACKED_CHARTS_BRANCH: ${{ env.STACKED_CHARTS_BRANCH }}
         AUTOMATION_BRANCH: ${{ env.JUNOS_BRANCH }}
         INSTALLATION_BRANCH: ${{ env.INSTALLATION_BRANCH }}
