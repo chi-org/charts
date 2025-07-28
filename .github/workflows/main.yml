@@ -20,6 +20,9 @@ on:
         description: "Stacked charts repo's branch to clone"
         type: string
         default: master
+      stacked_charts_commit_id:
+        description: "Stacked charts repo's full commit id to clone"
+        type: string
       junos_branch:
         description: "Junos repo's branch to clone"
         type: string
@@ -37,6 +40,7 @@ env:
   COMMIT_FULL_ID: ${{ inputs.commit_id || github.sha }}
   WAIT_SECONDS: ${{ inputs.wait_seconds || 600 }} 
   STACKED_CHARTS_BRANCH: ${{ inputs.stacked_charts_branch || 'master' }}
+  STACKED_CHARTS_COMMIT_ID: ${{ inputs.stacked_charts_commit_id }}
   CICD_UTILITIES_BRANCH: ${{ inputs.cicd_utilities_branch || 'main' }}
   INSTALLATION_BRANCH: ${{ inputs.installation_branch || 'master' }}
   JUNOS_BRANCH: ${{ inputs.junos_branch || 'master' }}
