@@ -21,7 +21,7 @@ on:
         type: string
         default: master
       stacked_charts_commit_id:
-        description: "Stacked charts repo's full commit id to clone"
+        description: "Stacked charts repo's full commit id to clone (default: latest commit)"
         type: string
       junos_branch:
         description: "Junos repo's branch to clone"
@@ -40,7 +40,7 @@ env:
   COMMIT_FULL_ID: ${{ inputs.commit_id || github.sha }}
   WAIT_SECONDS: ${{ inputs.wait_seconds || 600 }} 
   STACKED_CHARTS_BRANCH: ${{ inputs.stacked_charts_branch || 'master' }}
-  STACKED_CHARTS_COMMIT_ID: ${{ inputs.stacked_charts_commit_id }}
+  STACKED_CHARTS_COMMIT_ID: ${{ inputs.stacked_charts_commit_id || '' }}
   CICD_UTILITIES_BRANCH: ${{ inputs.cicd_utilities_branch || 'main' }}
   INSTALLATION_BRANCH: ${{ inputs.installation_branch || 'master' }}
   JUNOS_BRANCH: ${{ inputs.junos_branch || 'master' }}
@@ -334,6 +334,7 @@ jobs:
             -e "BUILD_VARS_PATH=${{ github.workspace }} \
             template_file=${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/templates/inventory_k8s_nmaa.j2 \
             STACKED_CHARTS_BRANCH=${{ env.STACKED_CHARTS_BRANCH }} \
+            STACKED_CHARTS_COMMIT_ID=${{ env.STACKED_CHARTS_COMMIT_ID }} \
             AUTOMATION_BRANCH=${{ env.JUNOS_BRANCH }} \
             STACK=nmaa"
     - name: Deploy NMAA Stack
@@ -500,6 +501,7 @@ jobs:
             -e "BUILD_VARS_PATH=${{ github.workspace }} \
             template_file=${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/templates/inventory_k8s_elk.j2 \
             STACKED_CHARTS_BRANCH=${{ env.STACKED_CHARTS_BRANCH }} \
+            STACKED_CHARTS_COMMIT_ID=${{ env.STACKED_CHARTS_COMMIT_ID }} \
             AUTOMATION_BRANCH=${{ env.JUNOS_BRANCH }} \
             STACK=elk"
     - name: Deploy ELK Stack
