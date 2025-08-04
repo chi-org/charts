@@ -41,7 +41,7 @@ spec:
 
         env:
           - name: REPO_LIST
-            value: {{ .Values.initRepo.repoList | quote }}
+            value: {{ .Values.repoList | quote }}
 
       {{- if and .Values.global.sharedPersistenceVolume .Values.global.sharedVolume.enabled }}
         volumeMounts:
