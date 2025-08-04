@@ -14,7 +14,7 @@ spec:
       containers:
       - name: init-repo
         image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
-        imagePullPolicy: {{ .Values.initRepo.pullPolicy | quote }}
+        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
         command:        
         - sh        
         - -c        
