@@ -3,7 +3,7 @@ name: Build and Test Charts
 on:
   push:
     branches:
-      - main
+      - main 
   pull_request:
     branches:
       - main
@@ -37,7 +37,8 @@ on:
         default: main
 
 env:
-  COMMIT_FULL_ID: ${{ inputs.commit_id || github.sha }}
+  REPO_BRANCH: ${{ github.head_ref || github.ref_name }} # To handle both push and pull_request events
+  COMMIT_FULL_ID: ${{ inputs.commit_id || github.event.after || github.sha }} # Default to the latest commit ID for push and pull_request events, also handle workflow_dispatch with no commit_id input
   WAIT_SECONDS: ${{ inputs.wait_seconds || 600 }} 
   STACKED_CHARTS_BRANCH: ${{ inputs.stacked_charts_branch || 'master' }}
   STACKED_CHARTS_COMMIT_ID: ${{ inputs.stacked_charts_commit_id || '' }}
@@ -226,7 +227,7 @@ jobs:
         
         cat << EOF > ${{ github.workspace }}/build_vars.yml
         BUILD_VARS_PATH: "${{ github.workspace }}"
-        CHARTS_BRANCH: ${{ github.ref_name }}
+        CHARTS_BRANCH: ${{ env.REPO_BRANCH }}
         STACKED_CHARTS_BRANCH: ${{ env.STACKED_CHARTS_BRANCH }}
         AUTOMATION_BRANCH: ${{ env.JUNOS_BRANCH }}
         INSTALLATION_BRANCH: ${{ env.INSTALLATION_BRANCH }}
@@ -336,7 +337,7 @@ jobs:
             -e "BUILD_VARS_PATH=${{ github.workspace }} \
             template_file=${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/templates/inventory_k8s_nmaa.j2 \
             STACKED_CHARTS_BRANCH=${{ env.STACKED_CHARTS_BRANCH }} \
-            STACKED_CHARTS_COMMIT_ID=${{ env.STACKED_CHARTS_COMMIT_ID }} \
+            STACKED_CHARTS_COMMIT_ID='${{ env.STACKED_CHARTS_COMMIT_ID }}' \
             AUTOMATION_BRANCH=${{ env.JUNOS_BRANCH }} \
             STACK=nmaa"
     - name: Deploy NMAA Stack
@@ -505,7 +506,7 @@ jobs:
             -e "BUILD_VARS_PATH=${{ github.workspace }} \
             template_file=${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/templates/inventory_k8s_elk.j2 \
             STACKED_CHARTS_BRANCH=${{ env.STACKED_CHARTS_BRANCH }} \
-            STACKED_CHARTS_COMMIT_ID=${{ env.STACKED_CHARTS_COMMIT_ID }} \
+            STACKED_CHARTS_COMMIT_ID='${{ env.STACKED_CHARTS_COMMIT_ID }}' \
             AUTOMATION_BRANCH=${{ env.JUNOS_BRANCH }} \
             STACK=elk"
     - name: Deploy ELK Stack

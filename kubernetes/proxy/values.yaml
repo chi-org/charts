@@ -27,7 +27,7 @@ global:
 timezone: Asia/Ho_Chi_Minh
 
 image:
-  repository: svtechnmaa/svtech_proxy
+  repository: chi-org/svtech_proxy
   tag: v1.0.1
 
   pullPolicy: IfNotPresent
