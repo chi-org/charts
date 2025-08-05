@@ -20,6 +20,9 @@ on:
         description: "Stacked charts repo's branch to clone"
         type: string
         default: master
+      stacked_charts_commit_id:
+        description: "Stacked charts repo's full commit id to clone (default: latest commit)"
+        type: string
       junos_branch:
         description: "Junos repo's branch to clone"
         type: string
@@ -38,6 +41,7 @@ env:
   COMMIT_FULL_ID: ${{ inputs.commit_id || github.event.after || github.sha }} # Default to the latest commit ID for push and pull_request events, also handle workflow_dispatch with no commit_id input
   WAIT_SECONDS: ${{ inputs.wait_seconds || 600 }} 
   STACKED_CHARTS_BRANCH: ${{ inputs.stacked_charts_branch || 'master' }}
+  STACKED_CHARTS_COMMIT_ID: ${{ inputs.stacked_charts_commit_id || '' }}
   CICD_UTILITIES_BRANCH: ${{ inputs.cicd_utilities_branch || 'main' }}
   INSTALLATION_BRANCH: ${{ inputs.installation_branch || 'master' }}
   JUNOS_BRANCH: ${{ inputs.junos_branch || 'master' }}
@@ -261,6 +265,7 @@ jobs:
         EOF
     - name: Create VMs on vcenter
       run: |
+        cd ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook # To get the correct path for ansible config
         ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/vm--create_k8s_vm.yml -e "BUILD_VARS_PATH=${{ github.workspace }}" -e "vm_annotation='Created by: \n- repo: ${{ github.repository }} \n- github workflow: #${{ github.run_number }} \n- commit: ${{ env.COMMIT_FULL_ID }}'" 
 
     - name: Upload artifact
@@ -327,16 +332,19 @@ jobs:
     - name: Create inventory file for NMAA Stack
       run: |
         export ANSIBLE_HOST_KEY_CHECKING=False
+        cd ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook # To get the correct path for ansible config
         ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/create_inventory_file.yml \
             -e "BUILD_VARS_PATH=${{ github.workspace }} \
             template_file=${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/templates/inventory_k8s_nmaa.j2 \
             STACKED_CHARTS_BRANCH=${{ env.STACKED_CHARTS_BRANCH }} \
+            STACKED_CHARTS_COMMIT_ID='${{ env.STACKED_CHARTS_COMMIT_ID }}' \
             AUTOMATION_BRANCH=${{ env.JUNOS_BRANCH }} \
             STACK=nmaa"
     - name: Deploy NMAA Stack
       run: |
         # Install NMAA
         export ANSIBLE_HOST_KEY_CHECKING=False
+        cd ${{ github.workspace }}/SVTECH-installation-automation # To get the correct path for ansible config
         ansible-playbook ${{ github.workspace }}/SVTECH-installation-automation/k8s_nms_for_ci.yml \
                     -e @${{ github.workspace }}/stacked_charts/kubernetes/nmaa/image_chart_mapping.yml \
                     -e "GH_TOKEN=${{ secrets.PUSH_TOKEN }}" \
@@ -493,16 +501,19 @@ jobs:
     - name: Create inventory file for ELK Stack
       run: |
         export ANSIBLE_HOST_KEY_CHECKING=False
+        cd ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook # To get the correct path for ansible config
         ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/create_inventory_file.yml \
             -e "BUILD_VARS_PATH=${{ github.workspace }} \
             template_file=${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/templates/inventory_k8s_elk.j2 \
             STACKED_CHARTS_BRANCH=${{ env.STACKED_CHARTS_BRANCH }} \
+            STACKED_CHARTS_COMMIT_ID='${{ env.STACKED_CHARTS_COMMIT_ID }}' \
             AUTOMATION_BRANCH=${{ env.JUNOS_BRANCH }} \
             STACK=elk"
     - name: Deploy ELK Stack
       run: |
         # Install ELK
         export ANSIBLE_HOST_KEY_CHECKING=False
+        cd ${{ github.workspace }}/SVTECH-installation-automation # To get the correct path for ansible config
         ansible-playbook ${{ github.workspace }}/SVTECH-installation-automation/k8s_elk_for_ci.yml \
                     -e @${{ github.workspace }}/stacked_charts/kubernetes/elk/image_chart_mapping.yml \
                     -e "GH_TOKEN=${{ secrets.PUSH_TOKEN }}" \
@@ -744,5 +755,6 @@ jobs:
 
       - name: Cleanup Environment
         run: |
-         ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/vm--cleanup_vms.yml -e "BUILD_VARS_PATH=${{ github.workspace }}"
+          cd ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook # To get the correct path for ansible config
+          ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/vm--cleanup_vms.yml -e "BUILD_VARS_PATH=${{ github.workspace }}"
     
