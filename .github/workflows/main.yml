@@ -307,13 +307,14 @@ jobs:
         path: SVTECH-installation-automation
         ref: ${{ env.INSTALLATION_BRANCH }}
 
-    - name: Checkout SVTECH-Junos-Automation
-      uses: actions/checkout@v4
-      with:
-        repository: '${{ github.repository_owner }}/SVTECH-Junos-Automation'
-        token: ${{ secrets.PUSH_TOKEN }}
-        path: SVTECH-Junos-Automation
-        ref: ${{ env.JUNOS_BRANCH }}
+    # We don't need to pull code here, as we will use chart preparation to pull image later.
+    # - name: Checkout SVTECH-Junos-Automation
+    #   uses: actions/checkout@v4
+    #   with:
+    #     repository: '${{ github.repository_owner }}/SVTECH-Junos-Automation'
+    #     token: ${{ secrets.PUSH_TOKEN }}
+    #     path: SVTECH-Junos-Automation
+    #     ref: ${{ env.JUNOS_BRANCH }}
 
     - name: Checkout stacked_charts 
       uses: actions/checkout@v4
@@ -476,13 +477,14 @@ jobs:
         path: SVTECH-installation-automation
         ref: ${{ env.INSTALLATION_BRANCH }}
 
-    - name: Checkout SVTECH-Junos-Automation
-      uses: actions/checkout@v4
-      with:
-        repository: '${{ github.repository_owner }}/SVTECH-Junos-Automation'
-        token: ${{ secrets.PUSH_TOKEN }}
-        path: SVTECH-Junos-Automation
-        ref: ${{ env.JUNOS_BRANCH }}
+    # We don't need to pull code here, as we will use chart preparation to pull image later.
+    # - name: Checkout SVTECH-Junos-Automation
+    #   uses: actions/checkout@v4
+    #   with:
+    #     repository: '${{ github.repository_owner }}/SVTECH-Junos-Automation'
+    #     token: ${{ secrets.PUSH_TOKEN }}
+    #     path: SVTECH-Junos-Automation
+    #     ref: ${{ env.JUNOS_BRANCH }}
 
     - name: Checkout stacked_charts 
       uses: actions/checkout@v4
