@@ -11,8 +11,8 @@ commonAnnotations:
   helm.sh/hook-weight: "10"
 
 image:
-  repository: chi-org/svtech-junos-automation
-  tag: v1.0.0
+  repository: svtechnmaa/svtech-junos-automation
+  tag: v1.4.4
   pullPolicy: IfNotPresent
 
 repoList: "SVTECH-Junos-Automation"

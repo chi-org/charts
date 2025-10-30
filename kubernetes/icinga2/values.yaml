@@ -48,13 +48,14 @@ init:
 
 image:
   repository: svtechnmaa/svtech_icinga2
-  tag: v1.1.8
+  tag: v1.2.2
   pullPolicy: IfNotPresent
 
-sidecar:
+
+cronjob:
   image:
-    repository: svtechnmaa/svtech_icinga2
-    tag: v1.1.8
+    repository: svtechnmaa/svtech_debuger
+    tag: v1.0.3
     pullPolicy: IfNotPresent
 
 clusterDomain: cluster.local
@@ -70,7 +71,6 @@ architecture: distribute
 ### Master
 master:
   replicaCount: 2
-
   updateStrategy: RollingUpdate
   podManagementPolicy: OrderedReady
   podAffinityPreset: ""
@@ -96,7 +96,6 @@ master:
   ## Affinity for pod assignment
   ## Note: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
   ##
-  affinity: {}
 
   ## Node labels for pod assignment
   nodeSelector: {}
@@ -157,7 +156,7 @@ master:
 
   #   # hostPath: mount path on Host
   #   hostPath: /opt/k8s_configurations/icinga2
-
+  ticketsalt: ""
   influxdb_connection:
     enable: true
     influxdb_host: influxdb-relay
@@ -179,10 +178,10 @@ master:
     ido_cleanup_servicecheck: 7d
 
   notifications:
-    enable: false
+    enable: true
     mailhub_host: "postfix"
     mailhub_port: 25
-    relay_email: "ha.do@svtech.com.vn"
+    relay_email: "nmaa.alerts@gmail.com"
 
   # icingadb container
   icingadb:
@@ -195,6 +194,7 @@ master:
     env:
       TZ: Asia/Ho_Chi_Minh
       # RETENTION_HISTORY_DAYS: 30
+      # RETENTION_SLA_DAYS: 30
       # RETENTION_OPTION_ACKNOWLEDGEMENT: 30
       # RETENTION_OPTION_COMMENT: 30
       # RETENTION_OPTION_DOWNTIME: 30
@@ -267,7 +267,6 @@ master:
       - labelSelector:
           matchLabels:
             app.kubernetes.io/component: icinga2
-            # app.kubernetes.io/instance: nms
             app.kubernetes.io/name: icinga2
         topologyKey: kubernetes.io/hostname
 
@@ -283,3 +282,16 @@ satellite:
               values:
                 - icinga2-satellite
         topologyKey: kubernetes.io/hostname
+
+rebalance:
+  workloadType: Deployment
+  replicaCount: 1
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: rebalance
+            topologyKey: kubernetes.io/hostname
