@@ -775,3 +775,5 @@ jobs:
         run: |
           cd ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook # To get the correct path for ansible config
           ansible-playbook ${{ github.workspace }}/SVTECH_CICD_Utilities/ansible-playbook/vm--cleanup_vms.yml -e "BUILD_VARS_PATH=${{ github.workspace }}"
+
+          
