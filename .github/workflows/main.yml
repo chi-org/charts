@@ -609,11 +609,11 @@ jobs:
           cd ${{ github.workspace }}/SVTECH_CICD_Utilities/python_script/
           pip install -r requirements.txt
 
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v6.2.0
-        with:
-          # GPG private key exported as an ASCII armored version or its base64 encoding
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+      # - name: Import GPG key
+      #   uses: crazy-max/ghaction-import-gpg@v6.2.0
+      #   with:
+      #     # GPG private key exported as an ASCII armored version or its base64 encoding
+      #     gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
 
       - name: Update helm chart version based on commit
         run: |
@@ -628,19 +628,20 @@ jobs:
           artifacthub_path="${{ github.workspace }}/charts/artifacthub"
           helm repo index "$artifacthub_path"
           cd ${{ github.workspace }}/charts
-          git remote set-url origin https://svtechnmaa:${{ secrets.PUSH_TOKEN }}@github.com/svtechnmaa/charts.git
+          git remote set-url origin https://kiennkt:${{ secrets.PUSH_TOKEN }}@github.com/chi-org/charts.git
           git fetch origin main
-          git config --global user.name "svtechnmaa"
-          git config --global user.email "nmaa@svtech.com.vn"
-          git config --global commit.gpgSign true
-          git config --global user.signingkey ${{ secrets.GPG_KEY_ID }}
+          git checkout main
+          git config --global user.name "kiennkt"
+          git config --global user.email "kimtuankien2002@gmail.com.vn"
+          # git config --global commit.gpgSign true
+          # git config --global user.signingkey ${{ secrets.GPG_KEY_ID }}
           git add .
           git commit -m "no-ci: Release"
           git push origin main
           cd ${{ github.workspace }}/stacked_charts
           git add .
           git commit -m "no-ci: Release" 
-          git remote set-url origin https://svtechnmaa:${{ secrets.PUSH_TOKEN }}@github.com/svtechnmaa/stacked_charts.git
+          git remote set-url origin https://kiennkt:${{ secrets.PUSH_TOKEN }}@github.com/chi-org/stacked_charts.git
           git push origin master
 
   cleanup:
