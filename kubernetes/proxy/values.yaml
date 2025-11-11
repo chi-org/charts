@@ -28,7 +28,7 @@ timezone: Asia/Ho_Chi_Minh
 
 image:
   repository: chi-org/svtech_proxy
-  tag: v1.0.1
+  tag: v1.1.5
 
   pullPolicy: IfNotPresent
   # debug: true
