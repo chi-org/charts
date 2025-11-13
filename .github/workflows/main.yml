@@ -620,10 +620,10 @@ jobs:
           python3 ${{ github.workspace }}/SVTECH_CICD_Utilities/python_script/public_helmchart_release.py \
             --BUILD_VARS_PATH=${{ github.workspace }} \
             --GITHUB_TOKEN=${{ secrets.PUSH_TOKEN}} \
-            --OWNER=svtechnmaa \
+            --OWNER=chi-org \
             --charts_string=${{ needs.check_charts.outputs.changed_charts }} \
             --TARGET_REPO=charts \
-            --SOURCE_REPO=stacked_charts \
+            --SOURCE_REPO=charts \
             --COMMIT_SHA=${{ env.COMMIT_FULL_ID }}
 
           RELEASE_MSG=$(cat /tmp/release_info.txt)
