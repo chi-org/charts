@@ -30,7 +30,7 @@ image:
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest" # CHANGE THIS TO YOUR IMAGE TAG. "LATEST" IS NOT RECOMMENDED. 
+  tag: "v1.0.0"
 
 # This is to override the chart name.
 nameOverride: ""
