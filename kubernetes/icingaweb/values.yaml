@@ -57,6 +57,7 @@ clusterDomain: cluster.local
 # Change workloadType to Deployment, DaemonSet, or StatefulSet
 workloadType: Deployment
 
+
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
 
@@ -179,6 +180,7 @@ affinity:
   #       matchLabels:
   #         app.kubernetes.io/name: traefik
   #     topologyKey: kubernetes.io/hostname
+
 
 env:
   TZ: Asia/Ho_Chi_Minh
